@@ -1,0 +1,1 @@
+CFG_NAME = '.unpacked-archive.cfg'

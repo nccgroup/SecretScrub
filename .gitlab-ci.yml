@@ -1,0 +1,64 @@
+image: python:3
+
+variables:
+  PENTEST_NGS_CA_CERT: "-----BEGIN CERTIFICATE-----\n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\nKypklJpTKpnSnG01Ga8=\n-----END CERTIFICATE-----"
+
+stages:
+- prepare
+- test
+- package
+
+prepare-gitleaks:
+  stage: prepare
+  image: golang:1.20
+  artifacts: 
+    paths:
+      - gitleaks/gitleaks
+  script:
+    - git clone https://github.com/gitleaks/gitleaks.git
+    - cd gitleaks
+    - make build
+
+test-job:
+  stage: test
+  dependencies:
+    - prepare-gitleaks
+  script:
+    - cp gitleaks/gitleaks /usr/bin/gitleaks
+    - apt-get install wget apt-transport-https gnupg
+    - wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+    - . /etc/os-release && echo deb https://aquasecurity.github.io/trivy-repo/deb $VERSION_CODENAME main | tee -a /etc/apt/sources.list.d/trivy.list
+    - apt-get update && apt-get install trivy
+    - git clone https://github.com/chris-anley/cq.git && git clone https://github.com/chris-anley/ccs.git
+    - pip install -r requirements.txt -r requirements-test.txt
+    - python -m pytest
+
+docker-build:
+  variables:
+    IMAGE: secretscrub
+    KANIKO_PUSH: ""
+  image:
+      name: gcr.io/kaniko-project/executor:debug
+      entrypoint: [""]
+  stage: package
+  script:
+      - mkdir -p /kaniko/.docker
+      - "echo -e Commit tag: $CI_COMMIT_TAG"
+      - "echo -e Destination arg: $KANIKO_PUSH"
+      - echo -e "$PENTEST_NGS_CA_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
+      - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+      - /kaniko/executor --context $CI_PROJECT_DIR/ --dockerfile $CI_PROJECT_DIR/Dockerfile $KANIKO_PUSH
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+.*/'
+      # Latest tag is applied when commit tag matches version number format.
+      when: on_success
+      variables:
+        KANIKO_PUSH: "--destination $CI_REGISTRY_IMAGE:latest --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+    - if: $CI_COMMIT_TAG
+      when: on_success
+      variables:
+        KANIKO_PUSH: "--destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+    - when: on_success # Fallback
+      variables:
+        KANIKO_PUSH: "--no-push"
+

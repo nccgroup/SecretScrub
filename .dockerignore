@@ -1,0 +1,13 @@
+**/.__pycache__
+**/.dockerignore
+**/.pytest_cache
+**/.venv
+**/.vscode
+**/.git
+**/.gitignore
+**/.gitlab-ci.yml
+**/__pycache__
+Dockerfile
+ccs
+cq
+#test
