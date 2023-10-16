@@ -92,7 +92,7 @@ class SecretScrubReport:
                 'File Name' : file_name,
                 'Directory' : file_dir,
                 'Commit' : sarif_result.commit_sha,
-                'Start Line' : loc.start_line + 1,
+                'Start Line' : (loc.start_line + 1) if loc.start_line is not None else None,
                 'Tool' : sarif_result.tool_name,
                 'Content' : self.encode_content_list(content_list),
                 'Status' : status,
