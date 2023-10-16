@@ -104,7 +104,7 @@ def main(args):
                 logging.info(f'Report written to {report.path}')
             report = None
         except Exception as e:
-            logging.error(f'Error closing report file')
+            logging.error(f'Error closing report file: {e}')
 
         try:
             if tmp_dir:
@@ -228,7 +228,7 @@ def process_result(tool_name, sarif_rules, subdir, src_path, out_path, placehold
     sarif_rule = sarif_rules.get(sarif_result.rule_id)
     if not sarif_rule:
         logging.warning(f'Unknown or unsupported rule: {sarif_result.rule_id}')
-        return
+        return (None, 'SarifError', f'Unknown or unsupported rule: {sarif_result.rule_id}')
 
     # If gitleaks, need to check whether it's in a commit or not
     if sarif_result.commit_sha:
@@ -253,14 +253,17 @@ def process_result(tool_name, sarif_rules, subdir, src_path, out_path, placehold
             with io.open(artifact_in_path, 'rb') as f:
                 artifact_bytes = f.read()            
         except Exception as e:
+            logging.error(f'Error reading file "{artifact_in_path}": {e}')
             return (None, 'IOError', 'Error reading file')
         
         if not validate_location_binary(artifact_bytes, loc):
+            logging.warning('Secret location is invalid')
             return (None, 'SarifError', 'Secret location invalid')
 
         matches = list(sarif_result.detect_secret_spans(loc, artifact_bytes))
         if not matches:
-            return (None, 'IncorrectBytes', 'Bytes found in file does not match that in the SARIF report.')
+            logging.warning('Bytes found in file do not match those in the SARIF report')
+            return (None, 'SarifError', 'Bytes found in file do not match those in the SARIF report.')
 
         content_list = []
         for match in matches:
@@ -274,6 +277,7 @@ def process_result(tool_name, sarif_rules, subdir, src_path, out_path, placehold
             with io.open(artifact_out_path, 'wb') as f:
                 f.write(artifact_bytes)
         except Exception as e:
+            logging.error(f'Error writing file "{artifact_out_path}": {e}')
             return (None, 'IOError', 'Error writing file')
 
     else:
@@ -282,19 +286,22 @@ def process_result(tool_name, sarif_rules, subdir, src_path, out_path, placehold
             with io.open(artifact_in_path, 'r', newline='') as f:
                 artifact_lines = f.readlines()
         except Exception as e:
+            logging.error(f'Error reading file "{artifact_in_path}": {e}')
             return (None, 'IOError', 'Error reading file')
 
         if not validate_location_text(artifact_lines, loc):
+            logging.warning('Secret location is invalid')
             return (None, 'SarifError', 'Secret location invalid')
 
         if loc.start_line != loc.end_line:
-            logging.warning(f'Secret spans multiple lines in: "{artifact_path}" ({sarif_rule.id}). This isn\'t yet fully supported for certain tool types.')
+            logging.warning(f'Secret spans multiple lines {loc.start_line}-{loc.end_line} in: "{artifact_path}" ({sarif_rule.id}). This isn\'t yet fully supported for certain tool types.')
 
         joined_lines = ''.join(artifact_lines[loc.start_line:loc.end_line+1])
 
         matches = list(sarif_result.detect_secret_spans(loc, joined_lines))
         if not matches:
-            return (None, 'IncorrectText', 'Text found in file does not match that in the SARIF report.')
+            logging.warning('Text found in file does not match that in the SARIF report.')
+            return (None, 'SarifError', 'Text found in file does not match that in the SARIF report.')
 
         content_list = []
         for match in matches:
@@ -313,8 +320,10 @@ def process_result(tool_name, sarif_rules, subdir, src_path, out_path, placehold
             with io.open(artifact_out_path, 'w', newline='') as f:
                 f.writelines(artifact_lines)
         except Exception as e:
+            logging.error(f'Error writing file "{artifact_out_path}": {e}')
             return (None, 'IOError', 'Error writing file')
 
+    logging.info('Successfully scrubbed.')
     return (content_list,'Scrubbed','Scrubbed')
 
 def build_rules_dict(tool_name, sarif_run):

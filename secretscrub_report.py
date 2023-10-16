@@ -11,6 +11,7 @@ import base64
 import csv
 from enum import Enum
 import json
+import logging
 import os
 import pyzipper
 import tempfile
@@ -99,7 +100,7 @@ class SecretScrubReport:
             }
             self.csv.writerow(rowdata)
         except Exception as e:
-            # Unknown location, cannot log this
+            logging.warning(f'Cannot write report entry: {e}')
             return
     
     def log_file_result(self, file_path, status, message):
@@ -119,8 +120,8 @@ class SecretScrubReport:
                 'Message' : message
             }
             self.csv.writerow(rowdata)
-        except:
-            # Unknown location, cannot log this
+        except Exception as e:
+            logging.warning(f'Cannot write report entry: {e}')
             return
 
     def encode_content_list(self, content_list):
