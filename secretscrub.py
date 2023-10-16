@@ -510,7 +510,11 @@ class GitLeaksResult(SarifResult):
                 loc.start_column = loc.start_column - 1
 
     def detect_secret_spans(self, loc, lines):
-        end_column = (lines.strip('\r\n').rfind('\n') + 1) + loc.end_column
+        if lines.endswith('\n'):
+            lines = lines[:-1]
+            if lines.endswith('\r'):
+                lines = lines[:-1]
+        end_column = (lines.rfind('\n') + 1) + loc.end_column
         text = lines[loc.start_column:end_column+1]
 
         # Found the text, now scrub all instances of it (there could be more than one!)
