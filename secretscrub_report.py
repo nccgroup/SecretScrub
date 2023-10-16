@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import pyzipper
+import shutil
 import tempfile
 
 class SecretScrubReportEncryption(Enum):
@@ -79,7 +80,19 @@ class SecretScrubReport:
                     os.unlink(self.tmp_path)
                     self.path = zip_path
             else:
-                os.rename(self.tmp_path, self.path)
+                try:
+                    # Attempt to delete file if it already exists
+                    os.unlink(self.path)
+                except Exception as e:
+                    pass
+                try:
+                    shutil.move(self.tmp_path, self.path)
+                except:
+                    try:
+                        logging.error("Unable to save report file to {self.path}. Removing temporary file...")
+                        os.unlink(self.tmp_path)
+                    except Exception as e:
+                        logging.error("Unable to remove temporary report file at {self.tmp_path}. The file should be removed manually.")
 
     def log_result(self, sarif_result, content_list, status, message):
         if not self.csv:
